@@ -1,0 +1,26 @@
+name: productivity_tips_ads_flutter
+description: >-
+  Appli Flutter cross-platform (Android + iOS) qui affiche des astuces de
+  productivité avec une bannière AdMob pour revenu passif.
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  google_mobile_ads: ^7.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
