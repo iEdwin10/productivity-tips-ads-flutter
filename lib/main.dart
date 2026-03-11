@@ -77,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const MotivationPage(),
       const MoodFormPage(),
       const StatsPage(),
+      const PricingPage(),
     ];
 
     return Scaffold(
@@ -84,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             Expanded(child: pages[_currentIndex]),
+            // La bannière reste visible même si plus tard tu ajoutes une offre "sans pub".
             if (_bannerAd != null)
               SizedBox(
                 width: _bannerAd!.size.width.toDouble(),
@@ -114,6 +116,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: 'Vue d\'ensemble',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.more_horiz),
+            selectedIcon: Icon(Icons.more),
+            label: 'Plus',
           ),
         ],
       ),
@@ -530,6 +537,123 @@ class _StatsPageState extends State<StatsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Page discrète qui présente les options Premium / retrait des pubs.
+class PricingPage extends StatelessWidget {
+  const PricingPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Options',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'L\'application reste totalement utilisable gratuitement. '
+              'Si tu le souhaites, tu peux soutenir le projet et débloquer '
+              'quelques bonus discrets.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Version actuelle',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          SizedBox(height: 8),
+                          Text('• Accès complet aux phrases de motivation'),
+                          Text('• Suivi de l\'humeur et des activités'),
+                          Text('• Graphiques sur 7 jours'),
+                          Text('• Bannières publicitaires discrètes'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Card(
+              color: colorScheme.primaryContainer.withOpacity(0.9),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pass Premium (idée)',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('Pensé comme un achat unique modeste (~3,99 € par ex.).'),
+                    const SizedBox(height: 12),
+                    const Text('Inclurait par exemple :'),
+                    const Text('• Retrait complet des bannières publicitaires'),
+                    const Text('• Thèmes visuels supplémentaires'),
+                    const Text('• Futures fonctionnalités IA pour adapter les phrases'),
+                    const Text('• Export des données de ressenti'),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Important : cette section est pour l\'instant **purement '
+                      'informatique / conceptuelle**. Le paiement in-app '
+                      'n\'est pas encore connecté. Il faudra utiliser un SDK '
+                      'd\'achats in-app (Play Store / App Store, RevenueCat, '
+                      'Adapty, etc.) pour activer réellement cette offre.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colorScheme.onPrimaryContainer),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Paiement non encore configuré (démo visuelle uniquement).',
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.lock_open),
+                        label: const Text('Bientôt disponible'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Quand tu seras prêt, tu pourras brancher ici une vraie page '
+              'de paywall (par ex. avec in_app_purchase ou un service '
+              'comme RevenueCat / Adapty) pour gérer un achat "Retirer les pubs".',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
     );
   }

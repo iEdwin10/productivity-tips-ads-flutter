@@ -10,6 +10,7 @@ Application Flutter simple (Android + iOS) qui affiche des phrases de motivation
 - Stockage local des ressentis via le plugin `shared_preferences`, adapté aux petites données persistantes dans Flutter.[web:59][web:57][web:62]
 - Page "Vue d'ensemble" qui affiche un **graphique de l’humeur sur les 7 derniers jours** grâce à la librairie `fl_chart`, une lib de graphiques très personnalisable (line, bar, pie, etc.).[web:54][web:52][web:61]
 - Bannière publicitaire via le plugin `google_mobile_ads`, supporté officiellement par Google pour Flutter (Android + iOS).[web:34][web:43][web:60]
+- **Onglet discret "Plus"** avec une page de tarifs expliquant une future offre Premium (retrait des pubs, thèmes, IA, export de données), pour préparer une monétisation par achat in-app sans gêner l’expérience actuelle.[web:71][web:69]
 
 Le but est de constituer une base pour, plus tard, brancher une IA qui analysera ces données et adaptera automatiquement les phrases de motivation et les conseils.
 
@@ -48,6 +49,9 @@ Le but est de constituer une base pour, plus tard, brancher une IA qui analysera
 - **Vue d'ensemble** :
   - Récupère tous les ressentis.
   - Affiche un **graphe en ligne** de l’humeur des 7 derniers jours avec `LineChart` de `fl_chart` (courbe lissée, points, axes annotés).[web:52][web:54][web:58]
+- **Plus (Tarifs / Premium)** :
+  - Page très discrète qui présente la différence entre la version gratuite actuelle et une idée de **Pass Premium** (retrait des pubs, thèmes supplémentaires, futures fonctionnalités IA, export des données).
+  - La page est purement informative pour l’instant : aucun paiement réel n’est branché. Elle prépare le terrain pour une future offre d’**achat "Retirer les pubs" ou abonnement**, comme recommandé par les stratégies de monétisation modernes (offrir un upsell ad-free en complément des pubs).[web:71][web:67][web:73]
 
 ## Intégration AdMob (à faire avant publication)
 
@@ -70,5 +74,6 @@ Pour passer en production :
 - Plus tard, tu pourras :
   - soit synchroniser ces données avec un backend (Firebase, Supabase, etc.),
   - soit faire tourner un modèle d’IA directement côté client (on-device) pour personnaliser les phrases de motivation.
+  - soit intégrer un **SDK de paywall / achats in-app** comme `in_app_purchases_paywall_ui`, RevenueCat ou Adapty pour connecter réellement la page Premium aux achats stores.[web:69][web:73][web:78]
 
-L’architecture du code sépare déjà le modèle `MoodEntry`, le repository local et les écrans, ce qui facilitera l’ajout d’une couche IA ou d’un backend distant plus tard.
+L’architecture du code sépare déjà le modèle `MoodEntry`, le repository local et les écrans, ce qui facilitera l’ajout d’une couche IA, d’un backend distant ou d’une vraie gestion d’abonnements / achats in-app plus tard.
