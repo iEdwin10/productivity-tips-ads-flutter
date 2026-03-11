@@ -1,13 +1,17 @@
 # Productivity Tips Ads (Flutter)
 
-Application Flutter simple (Android + iOS) qui affiche des astuces de productivité et une bannière de pub (AdMob) pour générer un petit revenu passif.
+Application Flutter simple (Android + iOS) qui affiche des phrases de motivation, permet de noter son ressenti de la journée et affiche une vue d'ensemble graphique, avec une bannière publicitaire (AdMob) pour générer un petit revenu passif.
 
 ## Principe
 
 - Une seule base de code Flutter pour **Android et iOS**.[web:36][web:39]
-- Liste d’astuces de productivité affichées au hasard.
-- Bannière publicitaire via le plugin `google_mobile_ads`, supporté officiellement par Google pour Flutter.[web:34][web:43]
-- Pas de backend, pas de compte, aucune donnée personnelle gérée directement dans le code (seules les données nécessaires à AdMob sont collectées via le SDK officiel).
+- Phrases de motivation affichées avec une petite animation et retour haptique pour rendre l’expérience plus dynamique.
+- Formulaire pour que l’utilisateur saisisse son **ressenti (humeur, activité principale, note libre)**.
+- Stockage local des ressentis via le plugin `shared_preferences`, adapté aux petites données persistantes dans Flutter.[web:59][web:57][web:62]
+- Page "Vue d'ensemble" qui affiche un **graphique de l’humeur sur les 7 derniers jours** grâce à la librairie `fl_chart`, une lib de graphiques très personnalisable (line, bar, pie, etc.).[web:54][web:52][web:61]
+- Bannière publicitaire via le plugin `google_mobile_ads`, supporté officiellement par Google pour Flutter (Android + iOS).[web:34][web:43][web:60]
+
+Le but est de constituer une base pour, plus tard, brancher une IA qui analysera ces données et adaptera automatiquement les phrases de motivation et les conseils.
 
 ## Installation du projet
 
@@ -17,11 +21,11 @@ Application Flutter simple (Android + iOS) qui affiche des astuces de productivi
    git clone https://github.com/iEdwin10/productivity-tips-ads-flutter.git
    cd productivity-tips-ads-flutter
    ```
-3. (Option recommandé) Lancer :
+3. Générer la structure complète (android/ios, etc.) :
    ```bash
    flutter create .
    ```
-   Cela génère les dossiers `android/` et `ios/` manquants à partir du `pubspec.yaml` existant, comme décrit dans la documentation/Stack Overflow.[web:36][web:42]
+   Cette commande crée les dossiers natifs manquants à partir du `pubspec.yaml`, comme décrit dans la documentation/Stack Overflow.[web:36][web:42]
 4. Récupérer les dépendances :
    ```bash
    flutter pub get
@@ -31,27 +35,40 @@ Application Flutter simple (Android + iOS) qui affiche des astuces de productivi
    flutter run
    ```
 
+## Écrans principaux
+
+- **Motivation** :
+  - Carte animée avec une phrase de motivation.
+  - Bouton "Nouvelle phrase" avec légère vibration (haptique) pour donner du feedback.
+- **Ressenti** :
+  - Sélecteur d’humeur (5 niveaux avec icônes). 
+  - Liste déroulante pour l’activité principale (travail, études, famille, loisir, repos).
+  - Champ texte pour décrire sa journée.
+  - Bouton pour enregistrer le ressenti (stocké localement en JSON dans `SharedPreferences`).[web:59][web:57]
+- **Vue d'ensemble** :
+  - Récupère tous les ressentis.
+  - Affiche un **graphe en ligne** de l’humeur des 7 derniers jours avec `LineChart` de `fl_chart` (courbe lissée, points, axes annotés).[web:52][web:54][web:58]
+
 ## Intégration AdMob (à faire avant publication)
 
-Le code utilise pour l’instant les **Ad Unit IDs de test** recommandés par Google pour Flutter (`BannerAd.testAdUnitId`), ce qui est obligatoire pendant le dev.[web:34][web:35][web:44]
+Le code utilise pour l’instant les **Ad Unit IDs de test** recommandés par Google pour Flutter (`BannerAd.testAdUnitId`), ce qui est obligatoire pendant le dev.[web:34][web:35][web:38]
 
 Pour passer en production :
 
 1. Créer un compte AdMob et déclarer deux applis : une Android et une iOS.[web:34][web:35]
 2. Créer pour chaque plateforme un bloc de bannière (Banner Ad Unit) et récupérer les IDs.
 3. Mettre à jour :
-   - L’`APPLICATION_ID` AdMob côté Android dans `android/app/src/main/AndroidManifest.xml` (clé `com.google.android.gms.ads.APPLICATION_ID`).[web:34][web:37]
+   - L’`APPLICATION_ID` AdMob côté Android dans `android/app/src/main/AndroidManifest.xml` sous la clé `com.google.android.gms.ads.APPLICATION_ID`.[web:34][web:37]
    - L’ID d’appli AdMob côté iOS dans `ios/Runner/Info.plist`.
-   - Remplacer `BannerAd.testAdUnitId` dans `lib/main.dart` par tes vrais `adUnitId` de production.
+   - Remplacer `BannerAd.testAdUnitId` dans `lib/main.dart` par tes vrais `adUnitId` de production.[web:34][web:43][web:60]
 
-Pense aussi à :
+## "Backend" et futur IA
 
-- Vérifier que ta `minSdkVersion` Android est au moins 23/24 selon la version du SDK mobile ads utilisée, comme mentionné dans les notes de versions.[web:29][web:40]
-- Tester longuement avec les IDs de test avant de basculer sur les IDs réels pour respecter les règles AdMob.[web:34][web:38]
+- Le stockage actuel est purement **local** (SharedPreferences) :
+  - Pas de serveur à maintenir.
+  - Moins de complexité, les données restent sur l’appareil de l’utilisateur.[web:59][web:55]  
+- Plus tard, tu pourras :
+  - soit synchroniser ces données avec un backend (Firebase, Supabase, etc.),
+  - soit faire tourner un modèle d’IA directement côté client (on-device) pour personnaliser les phrases de motivation.
 
-## Personnalisation
-
-- Modifie les textes des astuces dans `lib/main.dart` (tableau `_tips`).
-- Change les couleurs / thème Flutter via `ThemeData` dans `MyApp`.
-
-Cette appli est pensée pour être **simple, légère et avec très peu de maintenance** : aucune API externe (hors SDK de pubs), pas de base de données, juste du texte statique et une bannière pub.
+L’architecture du code sépare déjà le modèle `MoodEntry`, le repository local et les écrans, ce qui facilitera l’ajout d’une couche IA ou d’un backend distant plus tard.
