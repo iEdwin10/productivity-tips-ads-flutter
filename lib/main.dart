@@ -421,6 +421,10 @@ class _BreathingPageState extends State<BreathingPage>
   bool _running = false;
   String _lastPhase = '';
 
+  int _sessions = 0;
+  int _secondsTotal = 0;
+  DateTime? _sessionStart;
+
   @override
   void initState() {
     super.initState();
@@ -429,6 +433,24 @@ class _BreathingPageState extends State<BreathingPage>
       vsync: this,
       duration: _current.total,
     )..addListener(_onTick);
+    _loadBreathingStats();
+  }
+
+  Future<void> _loadBreathingStats() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _sessions = prefs.getInt('breathing_sessions_total') ?? 0;
+      _secondsTotal = prefs.getInt('breathing_seconds_total') ?? 0;
+    });
+  }
+
+  Future<void> _saveBreathingStats(int sessionSeconds) async {
+    final prefs = await SharedPreferences.getInstance();
+    _sessions += 1;
+    _secondsTotal += sessionSeconds;
+    await prefs.setInt('breathing_sessions_total', _sessions);
+    await prefs.setInt('breathing_seconds_total', _secondsTotal);
+    setState(() {});
   }
 
   @override
@@ -461,13 +483,28 @@ class _BreathingPageState extends State<BreathingPage>
     return '';
   }
 
+  Future<void> _startSession() async {
+    _sessionStart = DateTime.now();
+  }
+
+  Future<void> _stopSession() async {
+    if (_sessionStart == null) return;
+    final seconds = DateTime.now().difference(_sessionStart!).inSeconds;
+    _sessionStart = null;
+    if (seconds >= 30) {
+      await _saveBreathingStats(seconds);
+    }
+  }
+
   void _toggleRun() {
     if (_running) {
       _controller.stop();
+      _stopSession();
     } else {
       _controller
         ..duration = _current.total
         ..repeat();
+      _startSession();
     }
     setState(() => _running = !_running);
   }
@@ -520,6 +557,8 @@ class _BreathingPageState extends State<BreathingPage>
         phaseLabel = _running ? 'Respire' : 'Prêt ?';
     }
 
+    final minutes = (_secondsTotal / 60).floor();
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -540,7 +579,15 @@ class _BreathingPageState extends State<BreathingPage>
               }).toList(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Tu as déjà fait $_sessions séance(s), soit environ $minutes min de respiration.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(
             _current.description,
             textAlign: TextAlign.center,
@@ -731,6 +778,74 @@ class _StatsPageState extends State<StatsPage> {
     });
   }
 
+  int _computeStreakDays(List<MoodEntry> entries) {
+    if (entries.isEmpty) return 0;
+    final days = <DateTime>{};
+    for (final e in entries) {
+      days.add(DateTime(e.date.year, e.date.month, e.date.day));
+    }
+    var streak = 0;
+    var cursor = DateTime.now();
+    while (true) {
+      final dayKey = DateTime(cursor.year, cursor.month, cursor.day);
+      if (days.contains(dayKey)) {
+        streak++;
+        cursor = cursor.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  double? _averageMoodLastDays(List<MoodEntry> entries, int days) {
+    if (entries.isEmpty) return null;
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    final recent =
+        entries.where((e) => e.date.isAfter(cutoff)).toList(growable: false);
+    if (recent.isEmpty) return null;
+    final sum = recent.fold<int>(0, (acc, e) => acc + e.mood);
+    return sum / recent.length;
+  }
+
+  String? _buildContextualTip(List<MoodEntry> entries) {
+    if (entries.length < 5) return null;
+    final byActivity = <String, List<int>>{};
+    for (final e in entries) {
+      byActivity.putIfAbsent(e.activity, () => []).add(e.mood);
+    }
+    if (byActivity.length < 2) return null;
+
+    String? bestAct;
+    double bestAvg = -1;
+    String? worstAct;
+    double worstAvg = 6;
+
+    byActivity.forEach((activity, moods) {
+      if (moods.length < 2) return; // éviter les faux signaux
+      final avg = moods.reduce((a, b) => a + b) / moods.length;
+      if (avg > bestAvg) {
+        bestAvg = avg;
+        bestAct = activity;
+      }
+      if (avg < worstAvg) {
+        worstAvg = avg;
+        worstAct = activity;
+      }
+    });
+
+    if (bestAct == null || worstAct == null || bestAct == worstAct) {
+      return null;
+    }
+
+    return 'Tes journées "$bestAct" semblent associées à une meilleure humeur que les journées "$worstAct". Essaie de t’offrir un peu plus de $bestAct cette semaine.';
+  }
+
+  String _formatMood(double? value) {
+    if (value == null) return '-';
+    return '${value.toStringAsFixed(1)}/5';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -759,6 +874,11 @@ class _StatsPageState extends State<StatsPage> {
     for (var i = 0; i < last7.length; i++) {
       spots.add(FlSpot(i.toDouble(), last7[i].mood.toDouble()));
     }
+
+    final streak = _computeStreakDays(_entries);
+    final avg7 = _averageMoodLastDays(_entries, 7);
+    final avg30 = _averageMoodLastDays(_entries, 30);
+    final tip = _buildContextualTip(_entries);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -837,6 +957,32 @@ class _StatsPageState extends State<StatsPage> {
                     ),
                   ),
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ton rythme',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Série actuelle : $streak jour(s) de suite.'),
+                  Text('Moyenne 7 jours : ${_formatMood(avg7)}'),
+                  Text('Moyenne 30 jours : ${_formatMood(avg30)}'),
+                  if (tip != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      tip,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
